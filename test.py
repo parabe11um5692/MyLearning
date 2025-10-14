@@ -1,69 +1,60 @@
-""" from math import sqrt
+"""Эта программа - прототип рекомендательной системы. Вводим оценки для 6 фильмов, программа находит пользователя с наиболее схожими оценками и, 
+если у него есть фильмы, которые вы не видели, советует их к просмотру"""
 
-critics_score = {
-    "Анна": {"Книга1": 5, "Книга2": 3, "Книга3": 4},
-    "Борис": {"Книга1": 2, "Книга2": 5, "Книга3": 1},
-    "Виктор": {"Книга1": 4, "Книга2": 4, "Книга3": 5},
+import numpy as np
+import re
+
+user1 = [2, 4, 3, 0, 2, 1]
+user2 = [0, 0, 1, 4, 3, 5]
+user3 = [2, 1, 4, 5, 5, 5]
+user4 = [0, 1, 2, 5, 1, 4]
+
+movies = {
+    0: "Матрица",
+    1: "Интерстеллар",
+    2: "Джентльмены",
+    3: "Начало",
+    4: "Дюна",
+    5: "Темный рыцарь"
 }
 
-print('Эта программа высчитает, насколько два критика (Анна, Борис, Виктор) схожи в своих оценках, исходя из метрики косинусного сходства. Значение будет в пределах от -1 до 1, где 1 - полное сходство. Просто введите 2 имени и начнём!')
+try:
+    #ловим данные от пользователя и создаем возможность вводить через запятую или пробел
+    user_input =  input('Введите целочисленные оценки для 6 фильмов:')
+    numbers = [int(x) for x in re.findall(r'\d+', user_input)]
+    #формируем массив на основе полученных данных
+    user = np.array(numbers, dtype='int8')
+    #остальных критиков записываем в матрицу
+    user_scores_matrix = np.array([(user1),(user2),(user3),(user4)])
 
-first_critic  = input('Введите имя первого критика: ')
-second_critic = input('Введите имя второго критика: ')
+    def calc_cos_dist(user_1_as_array: list, user_2_as_array: list):
+        """Возвращает косинусное расстояние между двумя пользователями """
+        dot_multiply = np.dot(user_1_as_array, user_2_as_array)#числитель
+        user_v_norm = np.linalg.norm(user_1_as_array)#первый множитель из знаменателя
+        user_from_matrix_v_norm = np.linalg.norm(user_2_as_array)#второй множитель из знаменателя
+        similarity = dot_multiply / (user_v_norm * user_from_matrix_v_norm)#получаем сходство
+        distance = 1 - similarity#находим расстояние
+        return distance
 
-if first_critic and second_critic in critics_score:
-    if (first_critic == "Анна" and second_critic == "Борис") or (first_critic == "Борис" and second_critic == "Анна"):
-        x1,y1,z1 = critics_score["Анна"]["Книга1"], critics_score["Анна"]['Книга2'], critics_score["Анна"]['Книга3']
-        x2,y2,z2 = critics_score["Борис"]["Книга1"], critics_score["Борис"]['Книга2'], critics_score["Борис"]['Книга3']
-    elif (first_critic == "Анна" and second_critic == "Виктор") or (first_critic == "Виктор" and second_critic == "Анна"):
-        x1,y1,z1 = critics_score["Анна"]["Книга1"], critics_score["Анна"]['Книга2'], critics_score["Анна"]['Книга3']
-        x2,y2,z2 = critics_score["Виктор"]["Книга1"], critics_score["Виктор"]['Книга2'], critics_score["Виктор"]['Книга3']
-    elif (first_critic == "Борис" and second_critic == "Виктор") or (first_critic == "Виктор" and second_critic == "Борис"):
-         x1,y1,z1 = critics_score["Борис"]["Книга1"], critics_score["Борис"]['Книга2'], critics_score["Борис"]['Книга3']
-         x2,y2,z2 = critics_score["Виктор"]["Книга1"], critics_score["Виктор"]['Книга2'], critics_score["Виктор"]['Книга3']
+    distances = np.array([calc_cos_dist(user, elem) for elem in user_scores_matrix])#формируем массив для каждого пользователя в сравнении с нашим user'ом
 
-    cos_sim = ((x1 * x2) + (y1 * y2) + (z1 * z2))/(sqrt(x1 ** 2 + y1 **2 + z1 **2) * sqrt(x2 **2 + y2 **2 + z2 ** 2))
-    print(f"Результат вычислений: {round(cos_sim, 3)} или {cos_sim:.2%}")
-else:
-    print('Проверьте правильность введенных данных')
- """ 
-""" 
-print(f'Фильмы, которые посмотрели оба пользователя:  {", ".join(user1 & user2)}')
-print(f'Фильмы, которые видел только user1: {", ".join(user1 - user2)}')
-print(f'Фильмы, которые видел только user2:  {", ".join(user2 - user1)}')
-print(f'Все фильмы, которые кто-то из них смотрел: {", ".join(user1 | user2)}')
+    best_user_index = np.argmin(distances)#находим индекс лучшего попадания
+    best_user = user_scores_matrix[best_user_index]#находим оценки лучшего попадания
 
-recomend_for_user1 = (user1 | user2) - user1
-recomend_for_user2 = (user1 | user2) - user2
+    print(f'Пользователь {best_user_index + 1} имеет с вами наименьшее расстояние в {distances[best_user_index]:.3f}')
 
-print(f'Рекомендации для первого пользователя: {", ".join(recomend_for_user1)}')
-print(f'Рекомендации для второго пользователя: {", ".join(recomend_for_user2)}') """
+    found_rec_film = False #заглушка для получения фильмов, которые не видел user, но видел ближайший к нему пользователь
 
+    for i, rating in enumerate(user):
+    #пробегаемся по нумерованной версии оценок пользователя и сопоставляем оценки с названиями фильмов
+        if rating == 0 and best_user[i] > 0:
+            print(f'Посмотрите фильм "{movies[i]}"')
+            found_rec_film = True#если есть фильм, который наш пользователь не видел - меняем заглушку
+    if not found_rec_film:
+            print(f'Между вами и Пользователем {best_user_index + 1} нет разных фильмов')
 
-first_critic  = {"Книга1": 5, "Книга2": 3, "Книга3": 4}
-second_critic = {"Книга1": 2, "Книга3": 5, "Книга4": 1}
-third_critic  = {"Книга1": 4, "Книга2": 4, "Книга3": 5}
+except Exception as ex:
+     print('Проверьте правильность введенных данных!')
+     print('\n')
+     print(ex)
 
-critics_score = [first_critic, second_critic, third_critic]
-
-common = critics_score[0].keys()
-
-for critic in critics_score[1:]:
-    common &= critic.keys()
-
-list_of_common_scores = [] #вытягиваем оценки для общих книг от каждого критика
-
-for book in common:
-    ratings = []
-    for elem in critics_score:
-        ratings.append(elem.get(book))
-    list_of_common_scores.append(ratings)
-
-list_of_abs_deviations = [] #высчитываем отклонения 
-for scores in list_of_common_scores:
-    mean_value = sum(scores) / len(scores)
-    abs_devs = [abs(score - mean_value) for score in scores]  # модуль отклонений
-    list_of_abs_deviations.append(sum(abs_devs) / len(abs_devs))  # среднее отклонение для книги
-
-MAD = round(sum(list_of_abs_deviations) / len(list_of_abs_deviations), 2)
-print(MAD)
